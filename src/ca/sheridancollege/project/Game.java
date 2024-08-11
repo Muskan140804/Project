@@ -3,56 +3,93 @@
  * Students can modify and extend to implement their game.
  * Add your name as an author and the date!
  */
+
+
 package ca.sheridancollege.project;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
-/**
- * The class that models your game. You should create a more specific child of this class and instantiate the methods
- * given.
- *
- * @author dancye
- * @author Paul Bonenfant Jan 2020
- */
-public abstract class Game {
+public class Game {
 
-    private final String name;//the title of the game
-    private ArrayList<Player> players;// the players of the game
+    private final String name;
+    private List<Player> players;
+    private Player winner;
 
     public Game(String name) {
         this.name = name;
-        players = new ArrayList();
+        players = new ArrayList<>();
     }
 
-    /**
-     * @return the name
-     */
     public String getName() {
         return name;
     }
 
-    /**
-     * @return the players of this game
-     */
-    public ArrayList<Player> getPlayers() {
+    public List<Player> getPlayers() {
         return players;
     }
 
-    /**
-     * @param players the players of this game
-     */
-    public void setPlayers(ArrayList<Player> players) {
+    public void setPlayers(List<Player> players) {
         this.players = players;
     }
 
-    /**
-     * Play the game. This might be one method or many method calls depending on your game.
-     */
-    public abstract void play();
+    public void addPlayer(Player player) {
+        players.add(player);
+    }
 
-    /**
-     * When the game is over, use this method to declare and display a winning player.
-     */
-    public abstract void declareWinner();
+    public void play() {
+        while (!isGameOver()) {
+            playRound();
+        }
+        declareWinner();
+    }
 
-}//end class
+    private void playRound() {
+        List<PlayingCard> roundCards = playCards();
+        determineRoundWinner(roundCards);
+    }
+
+    private List<PlayingCard> playCards() {
+        List<PlayingCard> roundCards = new ArrayList<>();
+        for (Player player : getPlayers()) {
+            PlayingCard playedCard = player.getHand().playCard();
+            if (playedCard != null) {
+                roundCards.add(playedCard);
+            }
+        }
+        return roundCards;
+    }
+
+    private void determineRoundWinner(List<PlayingCard> roundCards) {
+        PlayingCard highestCard = findHighestCard(roundCards);
+        winner = findPlayerWithCard(roundCards, highestCard);
+        winner.getHand().addCards(roundCards);
+    }
+
+    private PlayingCard findHighestCard(List<PlayingCard> cards) {
+        return cards.stream()
+                .max(Comparator.comparingInt(card -> card.getRank().ordinal()))
+                .orElse(null);
+    }
+
+    private Player findPlayerWithCard(List<PlayingCard> cards, PlayingCard targetCard) {
+        return getPlayers().stream()
+                .filter(player -> player.getHand().getCards().contains(targetCard))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isGameOver() {
+        return getPlayers().stream().anyMatch(player -> player.getHand().isEmpty());
+    }
+
+    public void declareWinner() {
+        if (winner != null) {
+            System.out.println("The winner is: " + winner.getName());
+        } else {
+            System.out.println("It's a tie!");
+        }
+    }
+}
